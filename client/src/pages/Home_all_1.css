@@ -1,0 +1,65 @@
+.nabl-button {
+    background: #003171;
+    border: 0cm;
+    color: #ffffff;
+    padding: 0px 10px 0px 10px;
+    border-radius: 0cm;;
+  }
+  
+  .nabl-button:hover {
+    background-color: #3BAFDA;
+    color: white;
+    height: 50px;
+  }
+
+  .bg-base {
+    background-image: url(../images/backgrounds/backgroundbeforelogin.jpg); /*ดึงรูป*/
+    position: fixed; /*ไม่ให้ตำแหน่งเปลี่ยน*/
+    top: 0; /*ให้มันเริ่มที่จุดบนสุด*/
+    width: 100%; /*ขนาดรูปจริง 100%*/
+    height: 100%; /*ขนาดรูปจริง 100%*/
+    background-repeat: no-repeat; /*ไม่ให้รูปวนซ้ำ */
+    background-size: cover; /*ขนาดรูปให้เท่าหน้าจอ*/
+    background-position: 50% 50%; /*ลดตำแหน่งให้รูปมันพอดี*/
+  }
+
+  .modal-login {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 30px;
+    outline: 0;
+    width: 350px;
+    margin: auto;
+    top:60px;
+  }
+
+  .lo-buttonClose {
+    display: inline-block;
+    font-weight: 400;
+    color: #ffffff;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    border: 1px solid ;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: .25rem;
+    background-color: #e60023;
+    border-color: initial;
+    float: right;
+    margin: -10px 0px 0px 0px;
+    display: flex;
+}
+
+.lo-buttonClose:hover {
+    background-color: #ad081b;
+    border-color: unset;
+}

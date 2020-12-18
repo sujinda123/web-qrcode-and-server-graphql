@@ -1,0 +1,62 @@
+# ---------------------------------------------------------------------------- Select
+type Query {
+  # me: User!
+  login(username: String!, password: String!): AuthData
+  user(id: ID!): User
+  users: [User]!
+  product(id: ID!): Product
+  products: [Product]!
+}
+
+# ---------------------------------------------------------------------------- Create
+type Mutation {
+  signup(name: String!, username: String!, password: String!): User
+  login(username: String!, password: String!): AuthData
+
+  createProduct(name: String!, description: String!, price: Float!): Product!
+  updateProduct(
+    id: ID!
+    name: String
+    description: String
+    price: Float
+  ): Product!
+  deleteProduct(id: ID!): Product!
+}
+
+type Subscription {
+  newProductUser: Product
+}
+
+
+scalar Date
+
+type User {
+  id: ID!
+  name: String!
+  username: String!
+  password: String!
+  products: [Product]
+  createdAt: Date!
+}
+
+type Product {
+  id: ID!
+  name: String!
+  description: String!
+  price: Float!
+  user: User!
+  createdAt: Date!
+}
+
+type AuthData {
+  userId: ID
+  jwt: String
+}
+
+type Animal {
+  id: ID!
+  name: String!
+  description: String!
+  age: Int!
+  price: Float!
+}

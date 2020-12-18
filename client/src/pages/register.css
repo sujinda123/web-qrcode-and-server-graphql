@@ -1,0 +1,31 @@
+.container{
+    background: #fff;
+    /*width: 400px !important;*/
+    margin-top: 50px;
+    border-radius: 20px;
+    box-shadow: 0 0 6px 0px #00000066;
+}
+.container img{
+    width: 200px;
+    margin-top: 50px;
+    border-radius: 100%;
+}
+.container p{
+    font-size: 25px;
+    color: #686868;
+    text-align: left;
+}
+.container form{
+    text-align: left;
+}
+.custom-radio{
+    padding-right: 10px;
+}
+body{
+    background-image: url(../images/backgrounds/bg_register.jpg);
+    text-align: center !important;
+    background-size: cover !important;
+}
+.form-group{
+    text-align: left;
+}
