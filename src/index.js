@@ -9,7 +9,8 @@ import server from "./server";
 const createServer = async() => {
     try {
       await mongoose.connect(
-        `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@mydb-jwivl.gcp.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`,
+        // `mongodb+srv://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@mydb-jwivl.gcp.mongodb.net/${process.env.MONGO_DB}?retryWrites=true&w=majority`,
+        `mongodb://192.168.1.39:27017/?gssapiServiceName=mongodb`,
         { useUnifiedTopology: true }
       );
       mongoose.set('useFindAndModify', false);

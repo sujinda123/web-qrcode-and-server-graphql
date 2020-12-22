@@ -16,7 +16,7 @@ import getUser from "../getUser"
 
 const jwt = require('jsonwebtoken')
 var mongoose = require('mongoose');
-var ObjectId = require('mongodb').ObjectID;
+var ObjectId = require('mongodb').ObjectID; 
 
 
 const APP_SECRET = 'abcdefghijklmnopqrst'
@@ -55,7 +55,7 @@ const resolvers = {
           const userId = currentUsers.id
           return {
               token,
-              userId,
+              userId, 
           }
       },
     // ------------------------------------------------------------------------- สมัครสมาชิก

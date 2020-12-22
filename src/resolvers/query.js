@@ -5,8 +5,8 @@ import User from "../models/user";
 import Product from "../models/product";
 
 const Query = {
-  user: (parent, args, context, info) =>
-    User.findById(args.id).populate({
+  user: (parent, args,{ userId }, info) =>
+    User.findById(userId).populate({
       path: "products",
       populate: { path: "user" }
     }),

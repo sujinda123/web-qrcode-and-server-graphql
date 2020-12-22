@@ -2,7 +2,7 @@
 type Query {
   # me: User!
   login(username: String!, password: String!): AuthData
-  user(id: ID!): User
+  user: User
   users: [User]!
   product(id: ID!): Product
   products: [Product]!
@@ -50,7 +50,7 @@ type Product {
 
 type AuthData {
   userId: ID
-  jwt: String
+  token: String
 }
 
 type Animal {
