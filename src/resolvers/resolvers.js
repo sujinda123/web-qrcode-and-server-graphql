@@ -34,6 +34,14 @@ const resolvers = {
   //   // },
   // },
   Query,
+  User: {
+    async assets (user, args, { dataloaders }) {
+      const users = await dataloaders.users.loadMany(user.assets)
+      // console.log(user.id, user.followingUserIds, users.map(user => user.id))
+      // return userModel.getUsersByIds(user.followingUserIds)
+      return users
+    },
+  },
   Mutation:{
     // ------------------------------------------------------------------------- Login
       login: async (parent, args, context, info) => {

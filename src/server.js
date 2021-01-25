@@ -1,5 +1,6 @@
 import fs from "fs"
 import path from "path"
+const Dataloader = require('dataloader')
 
 import { ApolloServer } from 'apollo-server-express';
 import getUser from "./getUser"
@@ -27,6 +28,7 @@ const server = new ApolloServer({
           return { userId, token };
         }
     },
+    
 });
 
 export default server;

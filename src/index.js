@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 import server from "./server";
 
-const createServer = async() => {
+const createServer = async () => {
     try {
       await mongoose.connect(
         `mongodb://${process.env.HOST}:27017/?gssapiServiceName=mongodb`,
