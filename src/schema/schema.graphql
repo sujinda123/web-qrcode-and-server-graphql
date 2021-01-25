@@ -1,0 +1,150 @@
+input SearchList {
+  assetNumber: String
+}
+# ---------------------------------------------------------------------------- Select
+type Query {
+  # me: User!
+  # login(userUsername: String!, userPwd: String!): AuthData
+  user: User
+  users: [User]
+  allUsers: [User]
+  assets: [Asset]!
+  statusasset(id: ID!): StatusAsset
+  statusassets: [StatusAsset]!
+  search(input: SearchList, page: Int, limit: Int): [Asset!]!
+  
+  # product(id: ID!): Product
+  # products: [Product]!
+}
+
+# ---------------------------------------------------------------------------- Create
+type Mutation {
+  signup(
+    userUsername: String!, 
+    userFirstname: String!, 
+    userLastname: String!, 
+    userPwd: String!
+  ): User
+  login(Username: String!, Password: String!): AuthData
+  createStatusAsset(statusAssetName: String!): StatusAsset!
+  createAsset(
+    assetNumber: String!,
+    assetName: String!,
+    assetUnitCost: Float!,
+    assetBrand: String!,
+    assetModel: String!,
+    assetSerialNumber: String!,
+  ): Asset!
+
+  # createProduct(name: String!, description: String!, price: Float!): Product!
+  # updateProduct(
+  #   id: ID!
+  #   name: String
+  #   description: String
+  #   price: Float
+  # ): Product!
+  # deleteProduct(id: ID!): Product!
+}
+
+# type Subscription {
+#   newProductUser: Product
+# }
+
+scalar Date
+
+type User {
+  id: ID! 
+  userUsername: String!
+  userFirstname: String!
+  userLastname: String!
+  userPwd: String!
+  # updateBy: String!
+  # createdBy: String!
+  assets: [Asset]
+  statusassets: [StatusAsset]
+  updateAt: Date!
+  createdAt: Date!
+}
+
+type Privilege {
+  id: ID!
+  privilegeName: String!
+  updateBy: User!
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# สถานะสินทรัพย์
+type StatusAsset {
+  id: ID!
+  statusAssetName: String!
+  updateBy: User!
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# สาขา
+type Department {
+  id: ID!
+  departmentName: String!
+  updateBy: User!
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# สถานที่
+type Location {
+  id: ID!
+  locationName: String!
+  updateBy: User!
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# ห้อง
+type Room {
+  id: ID!
+  roomName: String!
+  roomLocation: Location!
+  updateBy: User!
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# ครุภัณฑ์
+type Asset {
+  id: ID!
+  assetCode: String! # รหัสครุภัณฑ์
+  assetName: String! # ชื่อครุภัณฑ์
+  assetNumber: Int! # จำนวน
+  assetUnitCost: String! # หน่วยนับ
+  assetBrand: String! # ยี่ห้อ
+  assetModel: String! # รุ่น/โมเดล
+  assetSerialNumber: String! # หมายเลขเครื่อง/S/N
+  assetImages: [Asset_Images]
+  updateBy: User! 
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+type Asset_Images {
+  id: ID!
+  assetImageName: String! # ชื่อรูปภาพ
+  assetImageAsset: Asset! 
+  updateBy: User! 
+  createdBy: User!
+  updateAt: Date!
+  createdAt: Date!
+}
+
+# ข้อมูลรับรองความถูกต้อง
+type AuthData {
+  userId: ID
+  token: String
+}
