@@ -21,7 +21,8 @@ const genPromise = (value, text) =>
 const Query = {
 
   user: (parent, args, { userId }, info) =>{
-    User.findById(userId).populate({
+    console.log(userId)
+    return User.findById(userId).populate({ 
         path: "statusassets assets",
         // populate: { path: "user"},
         options: { sort: { createdAt: -1 }},

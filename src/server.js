@@ -6,6 +6,10 @@ import { ApolloServer } from 'apollo-server-express';
 import getUser from "./getUser"
 
 import resolvers from "./resolvers/resolvers"
+
+const SECRET = 'aslkdjlkaj10830912039jlkoaiuwerasdjflkasd';
+const APP_SECRET = 'abcdefghijklmnopqrst1344984asd1asdascxca1s'
+
 // import typeDefs from './schema/typeDefs';
 const typeDefs = fs
     .readFileSync(path.join(__dirname, "./schema", "schema.graphql"), "utf8")
@@ -25,6 +29,7 @@ const server = new ApolloServer({
           // check from req
           const token = req.headers.authorization || "";
           const userId = getUser(token)
+          // console.log(token)
           return { userId, token };
         }
     },

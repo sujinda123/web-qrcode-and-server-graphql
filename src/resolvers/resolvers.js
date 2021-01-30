@@ -34,19 +34,12 @@ const resolvers = {
   //   // },
   // },
   Query,
-  User: {
-    async assets (user, args, { dataloaders }) {
-      const users = await dataloaders.users.loadMany(user.assets)
-      // console.log(user.id, user.followingUserIds, users.map(user => user.id))
-      // return userModel.getUsersByIds(user.followingUserIds)
-      return users
-    },
-  },
   Mutation:{
     // ------------------------------------------------------------------------- Login
       login: async (parent, args, context, info) => {
           
           const { Username, Password } = args;
+          console.log(Username,Password)
           if (Username == '') {
               throw new Error("กรุณากรอก Username")
           }
@@ -61,7 +54,10 @@ const resolvers = {
           if (!checkPassword) {
               throw new Error('รหัสผ่าน ไม่ถูกต้อง')
           }
-          const token = jwt.sign({ userId: currentUsers.id }, APP_SECRET)
+          // const token = jwt.sign({ userId: currentUsers.id }, APP_SECRET)
+
+          const token = jwt.sign({ userId: currentUsers.id },APP_SECRET,{ expiresIn: '20m' },);
+          
           const userId = currentUsers.id 
           return {
               token,
