@@ -17,25 +17,32 @@ const server = new ApolloServer({
     resolvers,
     introspection: true,
     playground: true,
-    context: async ({ req }) => {
-      const token = req.headers.authorization || "";
-      const userId = getUser(token)
-      return {
-        userId, 
-        token,
-        userModel,
-        assetModel,
-        dataloaders: {
-          users: new DataLoader(async userIds => {
-            const users = await userModel.getUsersByIds(userIds)
-            return userIds.map(userId => users.find(user => String(user._id) === String(userId)))
-          }),
-          assets: new DataLoader(async assetIds => {
-            const assets = await assetModel.getAssetsByUserIds(assetIds)
-          return assetIds.map(assetId => assets.filter(asset => String(asset.createdBy) === String(assetId)))
-          }),
+    context: async ({ req, connection }) => {
+      if (connection) {
+        // check connection for metadata
+        return connection.context;
+      } else {
+        const token = req.headers.authorization || "";
+        const userId = getUser(token)
+
+        return {
+          userId, 
+          token,
+          userModel,
+          assetModel,
+          dataloaders: {
+            users: new DataLoader(async userIds => {
+              const users = await userModel.getUsersByIds(userIds)
+              return userIds.map(userId => users.find(user => String(user._id) === String(userId)))
+            }),
+            assets: new DataLoader(async assetIds => {
+              const assets = await assetModel.getAssetsByUserIds(assetIds)
+            return assetIds.map(assetId => assets.filter(asset => String(asset.createdBy) === String(assetId)))
+            }),
+          }
         }
       }
+      
     }
     
 });

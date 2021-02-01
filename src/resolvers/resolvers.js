@@ -1,5 +1,5 @@
 // import Mutation from "./mutation"
-import Query from "./query"
+// import Query from "./query"
 import { GraphQLDateTime } from "graphql-iso-date"
 // const { PubSub } = require('apollo-server');
 // const pubsub = new PubSub();
@@ -8,22 +8,12 @@ import { GraphQLDateTime } from "graphql-iso-date"
 
 import bcrypt from "bcryptjs";
 
-import User from "../models/User"
-import StatusAsset from "../models/StatusAsset"
-import Asset from "../models/Asset"
+// import User from "../models/User"
+// import StatusAsset from "../models/StatusAsset"
+// import Asset from "../models/Asset"
 
 const jwt = require('jsonwebtoken')
 const APP_SECRET = 'abcdefghijklmnopqrst'
-
-const DataLoader = require("dataloader")
-
-const genPromise = (value, text) =>
-  new Promise(resolve => {
-    setTimeout(() => {
-      console.log(text)
-      return resolve(value)
-    }, 100)
-  })
 
 const resolvers = {
   // Subscription: {
@@ -34,15 +24,22 @@ const resolvers = {
   //   //     subscribe: (parent, args, context, info) => pubsub.asyncIterator([POST_ADD_DataUser]),
   //   // },
   // },
-  Query,
+  Query:{
+    user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
+  },
   User:{
     assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
+    search: async  ( _, {input: { assetCode }, limit, page, }, { assetModel } ) => await assetModel.asset
+        .find({ assetCode: { $regex: assetCode, $options: 'i' }})
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .populate({path: "createdBy updateBy",}),
     // assets: (user) => new DataLoader((keys) => 
     //   genPromise(
     //     keys.map((user) => user),
     //     `getAssetById: ${user.id}`)
     //   ).loadMany(user.assets),
-    // search: async ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
+    // search:  ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
     //   await assetModel
     //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
     //     .limit(limit)

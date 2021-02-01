@@ -100,7 +100,7 @@ const assetModel = (() => {
           // posts.find(post => String(post.userId) === String(userIds)),
           // posts.find(post => userIds.includes(post.userId)),
         `getAssetsByUserIds: ${userIds}`
-      )}
+      )},
     // getAllUsers: () =>{
     //   // console.log(mongo_userModel)
     //   return genPromise(users.find(), 'getAllUsers')
