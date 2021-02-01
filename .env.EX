@@ -1,0 +1,8 @@
+MONGO_USER = root
+MONGO_PASSWORD = root
+MONGO_DB = db_myapp
+MONGO_PORT = 27017
+MONGO_HOST = localhost
+
+SERVER_PORT = 4000
+SERVER_HOST = localhost
