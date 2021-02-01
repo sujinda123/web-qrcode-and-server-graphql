@@ -1,28 +1,29 @@
 // import Mutation from "./mutation"
 import Query from "./query"
 import { GraphQLDateTime } from "graphql-iso-date"
-const { PubSub } = require('apollo-server');
-const pubsub = new PubSub();
-const POST_ADDED = 'POST_ADDED'
+// const { PubSub } = require('apollo-server');
+// const pubsub = new PubSub();
+// const POST_ADDED = 'POST_ADDED'
 // const POST_ADD_DataUser = 'POST_ADD_DataUser'
-
 
 import bcrypt from "bcryptjs";
 
-import User from "../models/user"
+import User from "../models/User"
 import StatusAsset from "../models/StatusAsset"
 import Asset from "../models/Asset"
-// import Product from "../models/product"
-
-import getUser from "../getUser"
 
 const jwt = require('jsonwebtoken')
-var mongoose = require('mongoose');
-var ObjectId = require('mongodb').ObjectID; 
-
-
 const APP_SECRET = 'abcdefghijklmnopqrst'
 
+const DataLoader = require("dataloader")
+
+const genPromise = (value, text) =>
+  new Promise(resolve => {
+    setTimeout(() => {
+      console.log(text)
+      return resolve(value)
+    }, 100)
+  })
 
 const resolvers = {
   // Subscription: {
@@ -34,19 +35,43 @@ const resolvers = {
   //   // },
   // },
   Query,
+  User:{
+    assets: (user) => new DataLoader((keys) => 
+      genPromise(
+        keys.map((user) => user),
+        `getAssetById: ${user.id}`)
+      ).loadMany(user.assets),
+    search: async ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
+      await assetModel
+        .find({ assetCode: { $regex: assetCode, $options: 'i' }})
+        .limit(limit)
+        .skip((page - 1) * limit)
+        .populate({path: "createdBy updateBy",}),
+    
+    // assets: (user) => {
+		// 	const authorLoader = new DataLoader((keys) => {
+		// 		const result = keys.map((user) => {
+		// 			return user
+		// 		})
+		// 		return genPromise(result,`getAssetById: ${user.id}`)
+    //   })
+		// 	return authorLoader.loadMany(user.assets)
+		// },
+
+  },
   Mutation:{
     // ------------------------------------------------------------------------- Login
       login: async (parent, args, context, info) => {
-          
           const { Username, Password } = args;
-          console.log(Username,Password)
+
           if (Username == '') {
               throw new Error("กรุณากรอก Username")
           }
           if (Password == '') {
               throw new Error("กรุณากรอก รหัสผ่าน")
           }
-          const currentUsers = await User.findOne({username:args.userUsername});
+
+          const currentUsers = await User.findOne({userUsername:Username});
           if (!currentUsers) {
               throw new Error("ไม่พบ Username ในระบบ")
           }
@@ -54,19 +79,15 @@ const resolvers = {
           if (!checkPassword) {
               throw new Error('รหัสผ่าน ไม่ถูกต้อง')
           }
-          // const token = jwt.sign({ userId: currentUsers.id }, APP_SECRET)
 
-          const token = jwt.sign({ userId: currentUsers.id },APP_SECRET,{ expiresIn: '20m' },);
-          
-          const userId = currentUsers.id 
+          const token = jwt.sign({ userId: currentUsers.id },APP_SECRET,{ expiresIn: '3d' },);
           return {
-              token,
-              userId, 
+              token
           }
       },
     // ------------------------------------------------------------------------- สมัครสมาชิก
       signup: async (parent, args, { userId }, info) => {
-        // const userId = "5ffecb1c07ff9601fc38eb9f"
+
         const { userUsername, userPwd } = args;
         const username = userUsername.trim().toLowerCase();
         const currentUsers = await User.find({});
@@ -110,8 +131,8 @@ const resolvers = {
         }
         await user.save()
         return Asset.findById(assets.id).populate({
-            path: "user",
-            populate: { path: "assets" }
+            path: "createdBy updateBy",
+            // populate: { path: "assets" }
           })
       },
     // ------------------------------------------------------------------------- เพิ่มสินค้าให้สมาชิก

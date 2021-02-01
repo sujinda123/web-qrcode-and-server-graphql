@@ -1,5 +1,5 @@
 input SearchList {
-  assetNumber: String
+  assetCode: String
 }
 # ---------------------------------------------------------------------------- Select
 type Query {
@@ -11,7 +11,6 @@ type Query {
   assets: [Asset]!
   statusasset(id: ID!): StatusAsset
   statusassets: [StatusAsset]!
-  search(input: SearchList, page: Int, limit: Int): [Asset!]!
   
   # product(id: ID!): Product
   # products: [Product]!
@@ -28,12 +27,13 @@ type Mutation {
   login(Username: String!, Password: String!): AuthData
   createStatusAsset(statusAssetName: String!): StatusAsset!
   createAsset(
-    assetNumber: String!,
-    assetName: String!,
-    assetUnitCost: Float!,
-    assetBrand: String!,
-    assetModel: String!,
-    assetSerialNumber: String!,
+    assetCode: String! # รหัสครุภัณฑ์
+    assetName: String! # ชื่อครุภัณฑ์
+    assetNumber: Int!
+    assetUnitCost: String!
+    assetBrand: String!
+    assetModel: String!
+    assetSerialNumber: String!
   ): Asset!
 
   # createProduct(name: String!, description: String!, price: Float!): Product!
@@ -62,6 +62,7 @@ type User {
   # createdBy: String!
   assets: [Asset]
   statusassets: [StatusAsset]
+  search(input: SearchList, page: Int, limit: Int): [Asset!]!
   updateAt: Date!
   createdAt: Date!
 }
@@ -145,6 +146,6 @@ type Asset_Images {
 
 # ข้อมูลรับรองความถูกต้อง
 type AuthData {
-  userId: ID
+  # userId: ID
   token: String
 }

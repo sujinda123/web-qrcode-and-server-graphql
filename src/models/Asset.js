@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 
 const AssetSchema = new mongoose.Schema({
-  assetNumber: {
+
+  assetCode: {
     type: String,
     required: true,
     trim: true
@@ -11,9 +12,14 @@ const AssetSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  assetUnitCost: {
+  assetNumber: {
     type: Number,
     required: true,
+  },
+  assetUnitCost: {
+    type: String,
+    required: true,
+    trim: true
   },
   assetBrand: {
     type: String,
@@ -30,6 +36,11 @@ const AssetSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  assetImages: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Asset_Images",
+    required: true
+  }],
   updateBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
