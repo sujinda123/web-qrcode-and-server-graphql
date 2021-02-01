@@ -1,27 +1,18 @@
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
-
-// const Dataloader = require('dataloader')
-// const userLoader = new Dataloader(ids => fetchUserByIds(userId))
-// const loaders = { userLoader }
-
-// import User from "../models/user";
-import StatusAsset from "../models/StatusAsset"
-import Asset from "../models/Asset"
-// import Product from "../models/product";
-
-
 const Query = {
+  user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
 
-  user: (parent, args, { userId, userModel }, info) =>{
-    if(!userId)
-      throw new Error("กรุณา เข้าสู่ระบบ")
+  // allUsers (root, args, { userModel }) {
+  //   return userModel.getAllUsers()
+  // },
+  // user: (parent, args, { userId, userModel }, info) =>{
+  //   if(!userId)
+  //     throw new Error("กรุณา เข้าสู่ระบบ")
 
-    return userModel.findById(userId).populate({ 
-        path: "statusassets assets",
-        populate: { path: "createdBy updateBy"}, 
-        options: { sort: { createdAt: -1 }},
-    })},
+  //   return userModel.findById(userId).populate({ 
+  //       path: "statusassets assets",
+  //       populate: { path: "createdBy updateBy"}, 
+  //       options: { sort: { createdAt: -1 }},
+  //   })},
 
   // users: (parent, args, { userId, userModel }, info) =>{
   //   if(!userId)
@@ -32,20 +23,19 @@ const Query = {
   //       populate: { path: "user" }
   //   })},
 
-  statusasset: (parent, args, { userId }, info) =>
-    StatusAsset.findById(args.id).sort({createdAt: -1 }).populate({
-        path: "statusassets",
-        populate: { path: "user" }
-    }),
-  statusassets: (parent, args, { userId }, info) =>
-    StatusAsset.find().sort({ createdAt: -1 }).populate({
-        path: "createdBy updateBy",
-    }),
-  // assets: (parent, args, { userId }, info) =>{
-  //   if(!userId)
-  //     throw new Error("กรุณา เข้าสู่ระบบ")
-  //   return Asset.find().sort({ createdAt: -1 }).populate({
+  // statusasset: (parent, args, { userId }, info) =>
+  //   StatusAsset.findById(args.id).sort({createdAt: -1 }).populate({
+  //       path: "statusassets",
+  //       populate: { path: "user" }
+  //   }),
+  // statusassets: (parent, args, { userId }, info) =>
+  //   StatusAsset.find().sort({ createdAt: -1 }).populate({
   //       path: "createdBy updateBy",
+  //   }),
+  // assets: (parent, args, { userId, assetModel }, info) =>{
+  //   return assetModel.asset.find().sort({ createdAt: -1 }).populate({
+  //       path: "createdBy updateBy",
+  //       populate: { path: "createdBy updateBy"}, 
   //   })},
   // search: async (_, {input: { assetCode }, limit, page}, { userId }) =>{
   //   // const count = await Asset.countDocuments(searchQuery)

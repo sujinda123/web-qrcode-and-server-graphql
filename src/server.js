@@ -1,6 +1,6 @@
 import fs from "fs"
 import path from "path"
-const Dataloader = require('dataloader')
+const DataLoader = require('dataloader')
 import { ApolloServer } from 'apollo-server-express';
 import getUser from "./getUser"
 import resolvers from "./resolvers/resolvers"
@@ -25,6 +25,16 @@ const server = new ApolloServer({
         token,
         userModel,
         assetModel,
+        dataloaders: {
+          users: new DataLoader(async userIds => {
+            const users = await userModel.getUsersByIds(userIds)
+            return userIds.map(userId => users.find(user => String(user._id) === String(userId)))
+          }),
+          assets: new DataLoader(async assetIds => {
+            const assets = await assetModel.getAssetsByUserIds(assetIds)
+          return assetIds.map(assetId => assets.filter(asset => String(asset.createdBy) === String(assetId)))
+          }),
+        }
       }
     }
     

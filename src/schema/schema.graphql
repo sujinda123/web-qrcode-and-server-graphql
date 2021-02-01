@@ -6,11 +6,11 @@ type Query {
   # me: User!
   # login(userUsername: String!, userPwd: String!): AuthData
   user: User
-  users: [User]
-  allUsers: [User]
-  assets: [Asset]!
-  statusasset(id: ID!): StatusAsset
-  statusassets: [StatusAsset]!
+  # users: [User]
+  # allUsers: [User]
+  # assets: [Asset]!
+  # statusasset(id: ID!): StatusAsset
+  # statusassets: [StatusAsset]!
   
   # product(id: ID!): Product
   # products: [Product]!
@@ -25,7 +25,7 @@ type Mutation {
     userPwd: String!
   ): User
   login(Username: String!, Password: String!): AuthData
-  createStatusAsset(statusAssetName: String!): StatusAsset!
+  # createStatusAsset(statusAssetName: String!): StatusAsset!
   createAsset(
     assetCode: String! # รหัสครุภัณฑ์
     assetName: String! # ชื่อครุภัณฑ์
@@ -66,7 +66,7 @@ type User {
   updateAt: Date!
   createdAt: Date!
 }
-
+# สิทธิ์การเข้าถึง
 type Privilege {
   id: ID!
   privilegeName: String!
@@ -109,8 +109,8 @@ type Location {
 # ห้อง
 type Room {
   id: ID!
-  roomName: String!
-  roomLocation: Location!
+  roomName: String! # ชื่อห้อง
+  roomLocation: Location! # ชื่อตึก
   updateBy: User!
   createdBy: User!
   updateAt: Date!

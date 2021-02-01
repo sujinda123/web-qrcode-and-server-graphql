@@ -18,7 +18,7 @@
     "graphql-iso-date": "^3.6.1",
     "jsonwebtoken": "^8.5.1",
     "mongodb": "^3.6.3",
-    "mongoose": "^5.11.7",
+    "mongoose": "^5.11.14",
     "sem": "^1.0.0"
   },
   "devDependencies": {
