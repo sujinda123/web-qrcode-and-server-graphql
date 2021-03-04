@@ -5,7 +5,8 @@ input SearchList {
 type Query {
   # me: User!
   # login(userUsername: String!, userPwd: String!): AuthData
-  user: User
+  getUser(id: Int): [User!]!
+  getSupplier(company: String): [Supplier]
   # users: [User]
   # allUsers: [User]
   # assets: [Asset]!
@@ -15,15 +16,16 @@ type Query {
   # product(id: ID!): Product
   # products: [Product]!
 }
+# the schema allows the following query:
 
 # ---------------------------------------------------------------------------- Create
 type Mutation {
   signup(
-    userUsername: String!, 
-    userFirstname: String!, 
-    userLastname: String!, 
-    userPwd: String!
-  ): User
+    USER_USERNAME: String!, 
+    USER_FIRSTNAME: String!, 
+    USER_LASTNAME: String!, 
+    USER_PASSWORD: String!
+  ): AuthData
   login(Username: String!, Password: String!): AuthData
   # createStatusAsset(statusAssetName: String!): StatusAsset!
   createAsset(
@@ -52,34 +54,54 @@ type Mutation {
 
 scalar Date
 
+type Supplier {
+  ID: Int!
+  NAME: String
+  PROFESSION: String
+  PHONE:String
+  EMAIL:String
+  COMPANY: Company
+  BUSINESS_NUMBER: String
+}
+
+type Company {
+  ID: Int!
+  NAME: String
+  COUNTRY: String
+  CEO:String
+}
+  
+
+
 type User {
-  id: ID! 
-  userUsername: String!
-  userFirstname: String!
-  userLastname: String!
-  userPwd: String!
+  USER_ID: Int!
+  USER_USERNAME: String!
+  USER_FIRSTNAME: String!
+  USER_LASTNAME: String!
+  USER_PASSWORD: String!
   # updateBy: String!
   # createdBy: String!
-  assets: [Asset]
-  statusassets: [StatusAsset]
-  search(input: SearchList, page: Int, limit: Int): [Asset!]!
-  updateAt: Date!
-  createdAt: Date!
+  # assets: [Asset]
+  # statusassets: [StatusAsset]
+  # search(input: SearchList, page: Int, limit: Int): [Asset!]!
+  UPDATE_DATE: Date!
+  CREATE_DATE: Date!
 }
 # สิทธิ์การเข้าถึง
 type Privilege {
   id: ID!
   privilegeName: String!
-  updateBy: User!
-  createdBy: User!
-  updateAt: Date!
-  createdAt: Date!
+  UPDATE_BY: User!
+  CREATE_BY: User!
+  UPDATE_DATE: Date!
+  CREATE_DATE: Date!
 }
 
 # สถานะสินทรัพย์
-type StatusAsset {
+type Status_Asset {
   id: ID!
   statusAssetName: String!
+  asset: Asset!
   updateBy: User!
   createdBy: User!
   updateAt: Date!
@@ -128,6 +150,7 @@ type Asset {
   assetModel: String! # รุ่น/โมเดล
   assetSerialNumber: String! # หมายเลขเครื่อง/S/N
   assetImages: [Asset_Images]
+  statusassets: Status_Asset!
   updateBy: User! 
   createdBy: User!
   updateAt: Date!
@@ -137,7 +160,7 @@ type Asset {
 type Asset_Images {
   id: ID!
   assetImageName: String! # ชื่อรูปภาพ
-  assetImageAsset: Asset! 
+  asset: Asset! 
   updateBy: User! 
   createdBy: User!
   updateAt: Date!
@@ -148,4 +171,8 @@ type Asset_Images {
 type AuthData {
   # userId: ID
   token: String
+}
+
+type return {
+  text: String
 }

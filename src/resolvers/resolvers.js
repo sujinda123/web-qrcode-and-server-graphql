@@ -7,13 +7,59 @@ import { GraphQLDateTime } from "graphql-iso-date"
 // const POST_ADD_DataUser = 'POST_ADD_DataUser'
 
 import bcrypt from "bcryptjs";
-
+const mysql = require('mysql');
+const util = require('util');
 // import User from "../models/User"
 // import StatusAsset from "../models/StatusAsset"
 // import Asset from "../models/Asset"
 
 const jwt = require('jsonwebtoken')
 const APP_SECRET = 'abcdefghijklmnopqrst'
+
+
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'sujinda',
+  database: 'db_myapp'
+});
+
+const query = util.promisify(connection.query).bind(connection);
+
+let getSupplierByCompany = (company) => {
+  const sqlAll = `SELECT * FROM suppliers`;
+  const sqlByCompany = `${sqlAll} WHERE COMPANY = '${company}'`;
+  let sql = company? sqlByCompany : sqlAll;
+  return new Promise((resolve, reject) => {
+      connection.query(sql, (err, results) => {
+          if (err) reject(err);
+          resolve(results);
+      });
+  });
+};
+
+let getCompany = (id) => {
+  return new Promise((resolve, reject) => {
+      let sql = `SELECT * FROM companies WHERE ID = '${id}'`;
+      connection.query(sql, (err, results) => {
+          if (err) reject(err);
+          resolve(results);
+      });
+  });
+};
+
+let getUser = (id) => {
+  const sqlAll = `SELECT * FROM users`;
+  const sqlByID = `${sqlAll} WHERE USER_ID = '${id}'`;
+  let sql = id ? sqlByID : sqlAll;
+  return new Promise((resolve, reject) => {
+      connection.query(sql, (err, results) => {
+          if (err) reject(err);
+          resolve(results);
+      });
+  });
+};
 
 const resolvers = {
   // Subscription: {
@@ -24,45 +70,102 @@ const resolvers = {
   //   //     subscribe: (parent, args, context, info) => pubsub.asyncIterator([POST_ADD_DataUser]),
   //   // },
   // },
-  Query:{
-    user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
-  },
-  User:{
-    assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
-    search: async  ( _, {input: { assetCode }, limit, page, }, { assetModel } ) => await assetModel.asset
-        .find({ assetCode: { $regex: assetCode, $options: 'i' }})
-        .limit(limit)
-        .skip((page - 1) * limit)
-        .populate({path: "createdBy updateBy",}),
-    // assets: (user) => new DataLoader((keys) => 
-    //   genPromise(
-    //     keys.map((user) => user),
-    //     `getAssetById: ${user.id}`)
-    //   ).loadMany(user.assets),
-    // search:  ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
-    //   await assetModel
-    //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
-    //     .limit(limit)
-    //     .skip((page - 1) * limit)
-    //     .populate({path: "createdBy updateBy",}),
 
-    // assets: (user) => {
-		// 	const authorLoader = new DataLoader((keys) => {
-		// 		const result = keys.map((user) => {
-		// 			return user
-		// 		})
-		// 		return genPromise(result,`getAssetById: ${user.id}`)
-    //   })
-		// 	return authorLoader.loadMany(user.assets)
-		// },
+  Query:{
+    // user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
+    getSupplier: (obj, {company}) => {
+      return getSupplierByCompany(company).then(rows => rows);
+    },
+    getUser: (obj, {id}) => {
+      return getUser(id).then(rows => rows);
+    },
   },
+  Supplier: {
+    COMPANY: (obj) => {
+        return getCompany(obj.COMPANY).then(rows => rows[0]);
+    }
+  },
+
+
+  // User:{
+  //   assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
+    
+  //   search: async  ( user, args, { dataloaders, assetModel } ) => {
+  //       const {input: { assetCode }, limit, page, } = args
+  //       return await assetModel.asset
+  //       .find({ assetCode: { $regex: assetCode, $options: 'i' }})
+  //       .limit(limit)
+  //       .skip((page - 1) * limit)
+  //       .populate({path: "createdBy updateBy",})},
+  //   // assets: (user) => new DataLoader((keys) => 
+  //   //   genPromise(
+  //   //     keys.map((user) => user),
+  //   //     `getAssetById: ${user.id}`)
+  //   //   ).loadMany(user.assets),
+  //   // search:  ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
+  //   //   await assetModel
+  //   //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
+  //   //     .limit(limit)
+  //   //     .skip((page - 1) * limit)
+  //   //     .populate({path: "createdBy updateBy",}),
+
+  //   // assets: (user) => {
+	// 	// 	const authorLoader = new DataLoader((keys) => {
+	// 	// 		const result = keys.map((user) => {
+	// 	// 			return user
+	// 	// 		})
+	// 	// 		return genPromise(result,`getAssetById: ${user.id}`)
+  //   //   })
+	// 	// 	return authorLoader.loadMany(user.assets)
+	// 	// },
+  // },
   Asset:{
+    updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
+    createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
+    statusassets: async (user, args, { dataloaders, assetModel } ) => await assetModel.asset.find().populate({
+            path: "createdBy updateBy",
+            populate: { path: "createdBy updateBy"}, 
+        })
+  },
+  Status_Asset:{
     updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
     createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
   },
   Mutation:{
-    // ------------------------------------------------------------------------- Login
-      login: async (parent, args, { userModel }, info) => {
+        // ------------------------------------------------------------------------- สมัครสมาชิก
+        signup: async (parent, args, info) => {
+          const { USER_USERNAME, USER_PASSWORD, USER_FIRSTNAME, USER_LASTNAME } = args;
+
+          var sql = `SELECT * FROM users WHERE USER_USERNAME = '${USER_USERNAME}'`;
+          const password = await bcrypt.hash(USER_PASSWORD, 10);
+          
+          let token = (async () => {
+            try {
+              const rows = await query(sql);
+
+              if(rows[0]!=null){
+                throw new Error("พบ Username ในระบบ")
+              }
+
+              if (USER_PASSWORD.trim().length < 6) {
+                throw new Error("Password must be at least 6 characters.")
+              }
+
+              sql = `INSERT INTO users (USER_USERNAME, USER_FIRSTNAME, USER_LASTNAME, USER_PASSWORD) VALUES ('${USER_USERNAME}', '${USER_FIRSTNAME}', '${USER_LASTNAME}', '${password}')`;
+              query(sql);
+
+              return jwt.sign({userId: USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
+            } finally {
+              // connection.end();
+            }
+          })()
+
+
+          
+          return { token }
+        },
+      // ------------------------------------------------------------------------- Login
+      login:async(parent, args, { userModel }, info) => {
           const { Username, Password } = args;
 
           if (Username == '') {
@@ -72,35 +175,27 @@ const resolvers = {
               throw new Error("กรุณากรอก รหัสผ่าน")
           }
 
-          const currentUsers = await userModel.user.findOne({userUsername:Username});
-          if (!currentUsers) {
-              throw new Error("ไม่พบ Username ในระบบ")
-          }
-          const checkPassword = await bcrypt.compare(Password, currentUsers.userPwd)
-          if (!checkPassword) {
-              throw new Error('รหัสผ่าน ไม่ถูกต้อง')
-          }
+          var sql = `SELECT * FROM users WHERE USER_USERNAME = '${Username}'`;
 
-          const token = jwt.sign({ userId: currentUsers.id },APP_SECRET,{ expiresIn: '3d' },);
-          return {
-              token
-          }
-      },
-    // ------------------------------------------------------------------------- สมัครสมาชิก
-      signup: async (parent, args, { userId, userModel }, info) => {
+          let token = (async () => {
+            try {
 
-        const { userUsername, userPwd } = args;
-        const username = userUsername.trim().toLowerCase();
-        const currentUsers = await userModel.user.find({});
-        const isUsernameExist = currentUsers.findIndex(user => user.userUsername === username) > -1;
-        if (isUsernameExist) {
-          throw new Error("Username already exist.");
-        }
-        if (userPwd.trim().length < 6) {
-          throw new Error("Password must be at least 6 characters.");
-        }
-        const password = await bcrypt.hash(userPwd, 10);
-        return userModel.user.create({...args,userPwd: password})
+              const rows = await query(sql);
+              if(rows[0]==null){
+                throw new Error("ไม่พบ Username ในระบบ")
+              }
+              const checkPassword = await bcrypt.compare(Password, rows[0].USER_PASSWORD)
+              if(!checkPassword){
+                throw new Error('รหัสผ่าน ไม่ถูกต้อง')
+              }
+              return jwt.sign({userId: rows[0].USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
+
+            } finally {
+              // connection.end();
+            }
+          })()
+
+          return { token }
       },
       // ------------------------------------------------------------------------- 
       // createStatusAsset: async (parent, args, { userId }, info) => {

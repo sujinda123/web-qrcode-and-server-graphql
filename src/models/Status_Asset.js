@@ -6,6 +6,11 @@ const StatusAssetSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  asset:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Asset",
+    required: true
+  },
   updateBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -28,6 +33,6 @@ const StatusAssetSchema = new mongoose.Schema({
   }
 });
 
-const StatusAsset = mongoose.model("StatusAsset", StatusAssetSchema);
+const Status_Asset = mongoose.model("Status_Asset", StatusAssetSchema);
 
-export default StatusAsset;
+export default Status_Asset;

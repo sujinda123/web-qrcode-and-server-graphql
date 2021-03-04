@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const genPromise = (value, text) =>
   new Promise(resolve => {
     setTimeout(() => {
-      // console.log(text)
+      console.log(text)
       return resolve(value)
     }, 100)
   })
@@ -32,10 +32,6 @@ const userModel = (() => {
     assets: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Asset",
-    }],
-    statusassets: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "StatusAsset",
     }],
     updateAt: {
       type: Date,

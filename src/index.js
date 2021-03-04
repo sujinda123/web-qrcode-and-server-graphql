@@ -3,16 +3,31 @@ dotenv.config()
 const http = require('http');
 import express from "express";
 import mongoose from "mongoose";
-
 import server from "./server";
+const mysql = require('mysql');
+
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'sujinda',
+  database: 'db_myapp'
+});
+
+connection.connect(function(err){
+  if(!err) {
+      console.log("Database is connected ... \n\n");
+  } else {
+      console.log("Failed connecting to database ... \n\n");
+  }
+});
 
 const createServer = async () => {
     try {
-      await mongoose.connect(
-        `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}`,
-        { useNewUrlParser: true, useUnifiedTopology: true }
-      );
-      mongoose.set('useFindAndModify', false);
+      // await mongoose.connect(
+      //   `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASSWORD}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}`,
+      //   { useNewUrlParser: true, useUnifiedTopology: true }
+      // );
+      // mongoose.set('useFindAndModify', false);
 
       const app = express();
 
