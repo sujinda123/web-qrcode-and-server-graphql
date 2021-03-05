@@ -16,8 +16,6 @@ const util = require('util');
 const jwt = require('jsonwebtoken')
 const APP_SECRET = 'abcdefghijklmnopqrst'
 
-
-
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -27,34 +25,21 @@ const connection = mysql.createConnection({
 
 const query = util.promisify(connection.query).bind(connection);
 
-let getSupplierByCompany = (company) => {
-  const sqlAll = `SELECT * FROM suppliers`;
-  const sqlByCompany = `${sqlAll} WHERE COMPANY = '${company}'`;
-  let sql = company? sqlByCompany : sqlAll;
+let selectDB = (sql) => {
   return new Promise((resolve, reject) => {
-      connection.query(sql, (err, results) => {
+      query(sql, (err, results) => {
           if (err) reject(err);
           resolve(results);
       });
   });
 };
 
-let getCompany = (id) => {
+let getUser = (username) => {
+  const sqlAll = `SELECT * FROM asset_users`;
+  const sqlByID = `${sqlAll} WHERE USER_USERNAME = '${username}'`;
+  let sql = username ? sqlByID : sqlAll;
   return new Promise((resolve, reject) => {
-      let sql = `SELECT * FROM companies WHERE ID = '${id}'`;
-      connection.query(sql, (err, results) => {
-          if (err) reject(err);
-          resolve(results);
-      });
-  });
-};
-
-let getUser = (id) => {
-  const sqlAll = `SELECT * FROM users`;
-  const sqlByID = `${sqlAll} WHERE USER_ID = '${id}'`;
-  let sql = id ? sqlByID : sqlAll;
-  return new Promise((resolve, reject) => {
-      connection.query(sql, (err, results) => {
+      query(sql, (err, results) => {
           if (err) reject(err);
           resolve(results);
       });
@@ -73,21 +58,30 @@ const resolvers = {
 
   Query:{
     // user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
-    getSupplier: (obj, {company}) => {
-      return getSupplierByCompany(company).then(rows => rows);
-    },
-    getUser: (obj, {id}) => {
-      return getUser(id).then(rows => rows);
+
+    getUser: (obj, { id }, { auth_username }) => {
+      // console.log(auth_username)
+      if(auth_username == null){
+        throw new Error("กรุณาเข้าสู่ระบบ")
+      }
+      return getUser(auth_username).then(rows => rows);
     },
   },
-  Supplier: {
-    COMPANY: (obj) => {
-        return getCompany(obj.COMPANY).then(rows => rows[0]);
+
+  User:{
+    USER_ASSETS: (obj) => {
+      // console.log(obj)
+      let sql = `SELECT * FROM asset WHERE CREATED_BY = '${obj.USER_ID}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    USER_PRIVILEGE: (obj) => {
+      let sql = `SELECT * FROM asset_privilege WHERE PRIVILEGE_ID = '${obj.USER_PRIVILEGE}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    ASSET_PRIVILEGE: (obj) => {
+      let sql = `SELECT * FROM asset_status_and_privilege LEFT JOIN asset_status ON asset_status_and_privilege.STATUS_ID = asset_status.STATUS_ID WHERE PRIVILEGE_ID = '${obj.USER_PRIVILEGE}'`;
+      return selectDB(sql).then(rows => rows);
     }
-  },
-
-
-  // User:{
   //   assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
     
   //   search: async  ( user, args, { dataloaders, assetModel } ) => {
@@ -118,25 +112,45 @@ const resolvers = {
   //   //   })
 	// 	// 	return authorLoader.loadMany(user.assets)
 	// 	// },
-  // },
+  },
   Asset:{
-    updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
-    createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
-    statusassets: async (user, args, { dataloaders, assetModel } ) => await assetModel.asset.find().populate({
-            path: "createdBy updateBy",
-            populate: { path: "createdBy updateBy"}, 
-        })
+    ASSET_IMAGES: (obj) => {
+      let sql = `SELECT * FROM asset_image WHERE ASSET_ID = '${obj.ASSET_ID}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    ASSET_STATUS: (obj) => {
+      let sql = `SELECT * FROM asset_status WHERE STATUS_ID = '${obj.ASSET_STATUS}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    ASSET_ROOM: (obj) => {
+      let sql = `SELECT * FROM asset_room WHERE ROOM_ID = '${obj.ASSET_ROOM}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    CREATED_BY: (obj) => {
+      let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.CREATED_BY}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    UPDATE_BY: (obj) => {
+      let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.UPDATE_BY}'`;
+      return selectDB(sql).then(rows => rows);
+    },
+    // updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
+    // createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
+    // statusassets: async (user, args, { dataloaders, assetModel } ) => await assetModel.asset.find().populate({
+    //         path: "createdBy updateBy",
+    //         populate: { path: "createdBy updateBy"}, 
+    //     })
   },
   Status_Asset:{
-    updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
-    createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
+    // updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
+    // createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
   },
   Mutation:{
         // ------------------------------------------------------------------------- สมัครสมาชิก
         signup: async (parent, args, info) => {
           const { USER_USERNAME, USER_PASSWORD, USER_FIRSTNAME, USER_LASTNAME } = args;
 
-          var sql = `SELECT * FROM users WHERE USER_USERNAME = '${USER_USERNAME}'`;
+          var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${USER_USERNAME}'`;
           const password = await bcrypt.hash(USER_PASSWORD, 10);
           
           let token = (async () => {
@@ -144,7 +158,7 @@ const resolvers = {
               const rows = await query(sql);
 
               if(rows[0]!=null){
-                throw new Error("พบ Username ในระบบ")
+                throw new Error("Username มีในระบบแล้ว")
               }
 
               if (USER_PASSWORD.trim().length < 6) {
@@ -175,7 +189,7 @@ const resolvers = {
               throw new Error("กรุณากรอก รหัสผ่าน")
           }
 
-          var sql = `SELECT * FROM users WHERE USER_USERNAME = '${Username}'`;
+          var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${Username}'`;
 
           let token = (async () => {
             try {

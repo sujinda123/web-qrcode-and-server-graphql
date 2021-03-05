@@ -23,10 +23,10 @@ const server = new ApolloServer({
         return connection.context;
       } else {
         const token = req.headers.authorization || "";
-        const userId = getUser(token)
+        const auth_username = getUser(token)
 
         return {
-          userId, 
+          auth_username, 
           token,
           userModel,
           assetModel,

@@ -5,8 +5,7 @@ input SearchList {
 type Query {
   # me: User!
   # login(userUsername: String!, userPwd: String!): AuthData
-  getUser(id: Int): [User!]!
-  getSupplier(company: String): [Supplier]
+  getUser(username: String): [User!]!
   # users: [User]
   # allUsers: [User]
   # assets: [Asset]!
@@ -54,34 +53,17 @@ type Mutation {
 
 scalar Date
 
-type Supplier {
-  ID: Int!
-  NAME: String
-  PROFESSION: String
-  PHONE:String
-  EMAIL:String
-  COMPANY: Company
-  BUSINESS_NUMBER: String
-}
-
-type Company {
-  ID: Int!
-  NAME: String
-  COUNTRY: String
-  CEO:String
-}
-  
-
-
 type User {
   USER_ID: Int!
   USER_USERNAME: String!
+  USER_PASSWORD: String!
   USER_FIRSTNAME: String!
   USER_LASTNAME: String!
-  USER_PASSWORD: String!
+  USER_PRIVILEGE: [Privilege]
+  ASSET_PRIVILEGE: [Status_Asset]
   # updateBy: String!
   # createdBy: String!
-  # assets: [Asset]
+  USER_ASSETS: [Asset]
   # statusassets: [StatusAsset]
   # search(input: SearchList, page: Int, limit: Int): [Asset!]!
   UPDATE_DATE: Date!
@@ -89,23 +71,23 @@ type User {
 }
 # สิทธิ์การเข้าถึง
 type Privilege {
-  id: ID!
-  privilegeName: String!
-  UPDATE_BY: User!
-  CREATE_BY: User!
+  PRIVILEGE_ID: ID!
+  PRIVILEGE_NAME: String!
+  # UPDATE_BY: User!
+  # CREATE_BY: User!
   UPDATE_DATE: Date!
   CREATE_DATE: Date!
 }
 
 # สถานะสินทรัพย์
 type Status_Asset {
-  id: ID!
-  statusAssetName: String!
-  asset: Asset!
-  updateBy: User!
-  createdBy: User!
-  updateAt: Date!
-  createdAt: Date!
+  STATUS_ID: Int!
+  STATUS_NAME: String!
+  # asset: Asset!
+  # updateBy: User!
+  # createdBy: User!
+  CREATE_DATE: Date!
+  UPDATE_DATE: Date!
 }
 
 # สาขา
@@ -130,39 +112,40 @@ type Location {
 
 # ห้อง
 type Room {
-  id: ID!
-  roomName: String! # ชื่อห้อง
-  roomLocation: Location! # ชื่อตึก
-  updateBy: User!
-  createdBy: User!
-  updateAt: Date!
-  createdAt: Date!
+  ROOM_ID: Int!
+  ROOM_NAME: String! # ชื่อห้อง
+  # roomLocation: Location! # ชื่อตึก
+  # updateBy: User!
+  # createdBy: User!
+  CREATE_DATE: Date!
+  UPDATE_DATE: Date!
 }
 
 # ครุภัณฑ์
 type Asset {
-  id: ID!
-  assetCode: String! # รหัสครุภัณฑ์
-  assetName: String! # ชื่อครุภัณฑ์
-  assetNumber: Int! # จำนวน
-  assetUnitCost: String! # หน่วยนับ
-  assetBrand: String! # ยี่ห้อ
-  assetModel: String! # รุ่น/โมเดล
-  assetSerialNumber: String! # หมายเลขเครื่อง/S/N
-  assetImages: [Asset_Images]
-  statusassets: Status_Asset!
-  updateBy: User! 
-  createdBy: User!
-  updateAt: Date!
-  createdAt: Date!
+  ASSET_ID: Int!
+  ASSET_CODE: String! # รหัสครุภัณฑ์
+  ASSET_NAME: String! # ชื่อครุภัณฑ์
+  ASSET_NUMBER: Int! # จำนวน
+  # assetUnitCost: String! # หน่วยนับ
+  ASSET_BRAND: String! # ยี่ห้อ
+  ASSET_MODEL: String! # รุ่น/โมเดล
+  ASSET_SERIALNUMBER: String! # หมายเลขเครื่อง/S/N
+  ASSET_IMAGES: [Asset_Images]
+  ASSET_STATUS: [Status_Asset]
+  ASSET_ROOM: [Room]
+  CREATED_BY: [User]
+  UPDATE_BY: [User]
+  CREATE_DATE: Date!
+  UPDATE_DATE: Date!
 }
 
 type Asset_Images {
-  id: ID!
-  assetImageName: String! # ชื่อรูปภาพ
-  asset: Asset! 
-  updateBy: User! 
-  createdBy: User!
+  IMAGE_ID: Int!
+  IMAGE_NAME: String! # ชื่อรูปภาพ
+  ASSET_ID: Int!
+  # updateBy: User! 
+  # createdBy: User!
   updateAt: Date!
   createdAt: Date!
 }
