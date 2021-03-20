@@ -8,6 +8,7 @@ import { GraphQLDateTime } from "graphql-iso-date"
 
 import bcrypt from "bcryptjs";
 const mysql = require('mysql');
+const fs = require('fs');
 const util = require('util');
 // import User from "../models/User"
 // import StatusAsset from "../models/StatusAsset"
@@ -15,6 +16,8 @@ const util = require('util');
 
 const jwt = require('jsonwebtoken')
 const APP_SECRET = 'abcdefghijklmnopqrst'
+
+const {v4: uuid} = require('uuid');
 
 const connection = mysql.createConnection({
   host: 'localhost',
@@ -25,7 +28,7 @@ const connection = mysql.createConnection({
 
 const query = util.promisify(connection.query).bind(connection);
 
-let selectDB = (sql) => {
+let queryDB = (sql) => {
   return new Promise((resolve, reject) => {
       query(sql, (err, results) => {
           if (err) reject(err);
@@ -41,10 +44,71 @@ let getUser = (username) => {
   return new Promise((resolve, reject) => {
       query(sql, (err, results) => {
           if (err) reject(err);
-          resolve(results);
+          resolve(results[0]);
       });
   });
 };
+
+let typeCheck = async (item)=>{
+  let {mimetype} = await item;
+  console.log(item)
+  if(!(mimetype === "image/png" || mimetype === "image/jpeg")){
+      return false;
+  }else{
+      return true;
+  }
+}
+
+const processUpload = async (file)=>{
+  console.log(file)
+  const {createReadStream, mimetype, encoding, filename} = await file;
+  console.log(mimetype)
+  console.log(encoding)
+  console.log(filename)
+  let path = "uploads/" + uuid() + filename;
+  let stream = fs.createReadStream();
+  return new Promise((resolve,reject)=>{
+      stream
+      .pipe(fs.createWriteStream(path))
+      .on("finish", ()=>{
+
+          resolve({
+              success: true,
+              message: "Successfully Uploaded",
+              mimetype, filename, encoding, location: path
+          })
+      })
+      .on("error", (err)=>{
+          console.log("Error Event Emitted")
+          reject({
+              success: false,
+              message: "Failed"
+          })
+      })
+  })
+}
+
+// let processUploadS3 = async (file)=>{
+//   const {createReadStream, mimetype, encoding, filename} = await file;
+//   let stream = createReadStream();
+//   const {Location} = await s3.upload({
+//       Body: stream,
+//       Key: `${uuid()}${filename}`,
+//       ContentType: mimetype
+//   }).promise();
+//   return new Promise((resolve,reject)=>{
+//       if (Location){
+//           resolve({
+//               success: true, message: "Uploaded", mimetype,filename,
+//               location: Location, encoding
+//           })
+//       }else {
+//           reject({
+//               success: false, message: "Failed"
+//           })
+//       }
+//   })
+// }
 
 const resolvers = {
   // Subscription: {
@@ -58,7 +122,6 @@ const resolvers = {
 
   Query:{
     // user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
-
     getUser: (obj, { id }, { auth_username }) => {
       // console.log(auth_username)
       if(auth_username == null){
@@ -66,31 +129,36 @@ const resolvers = {
       }
       return getUser(auth_username).then(rows => rows);
     },
+    getSearch: async ( _, args ) => {
+      const {input: { ASSET_CODE }, limit, page, } = args
+      let sql = `SELECT * FROM asset WHERE ASSET_CODE LIKE '%${ASSET_CODE}%'`;
+      return queryDB(sql).then(rows => rows);
+    },
   },
 
   User:{
     USER_ASSETS: (obj) => {
       // console.log(obj)
       let sql = `SELECT * FROM asset WHERE CREATED_BY = '${obj.USER_ID}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     USER_PRIVILEGE: (obj) => {
       let sql = `SELECT * FROM asset_privilege WHERE PRIVILEGE_ID = '${obj.USER_PRIVILEGE}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     ASSET_PRIVILEGE: (obj) => {
       let sql = `SELECT * FROM asset_status_and_privilege LEFT JOIN asset_status ON asset_status_and_privilege.STATUS_ID = asset_status.STATUS_ID WHERE PRIVILEGE_ID = '${obj.USER_PRIVILEGE}'`;
-      return selectDB(sql).then(rows => rows);
-    }
+      return queryDB(sql).then(rows => rows);
+    },
   //   assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
     
-  //   search: async  ( user, args, { dataloaders, assetModel } ) => {
-  //       const {input: { assetCode }, limit, page, } = args
-  //       return await assetModel.asset
-  //       .find({ assetCode: { $regex: assetCode, $options: 'i' }})
-  //       .limit(limit)
-  //       .skip((page - 1) * limit)
-  //       .populate({path: "createdBy updateBy",})},
+    // search: async  ( user, args, { dataloaders, assetModel } ) => {
+    //     const {input: { assetCode }, limit, page, } = args
+    //     return await assetModel.asset
+    //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
+    //     .limit(limit)
+    //     .skip((page - 1) * limit)
+    //     .populate({path: "createdBy updateBy",})},
   //   // assets: (user) => new DataLoader((keys) => 
   //   //   genPromise(
   //   //     keys.map((user) => user),
@@ -116,23 +184,27 @@ const resolvers = {
   Asset:{
     ASSET_IMAGES: (obj) => {
       let sql = `SELECT * FROM asset_image WHERE ASSET_ID = '${obj.ASSET_ID}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     ASSET_STATUS: (obj) => {
       let sql = `SELECT * FROM asset_status WHERE STATUS_ID = '${obj.ASSET_STATUS}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     ASSET_ROOM: (obj) => {
       let sql = `SELECT * FROM asset_room WHERE ROOM_ID = '${obj.ASSET_ROOM}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
+    },
+    ASSET_ORIGINAL_ROOM: (obj) => {
+      let sql = `SELECT * FROM asset_room WHERE ROOM_ID = '${obj.ASSET_ORIGINAL_ROOM}'`;
+      return queryDB(sql).then(rows => rows);
     },
     CREATED_BY: (obj) => {
       let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.CREATED_BY}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     UPDATE_BY: (obj) => {
       let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.UPDATE_BY}'`;
-      return selectDB(sql).then(rows => rows);
+      return queryDB(sql).then(rows => rows);
     },
     // updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
     // createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
@@ -211,6 +283,29 @@ const resolvers = {
 
           return { token }
       },
+      singleUploadLocal : async (_, args)=>{
+        let t = await typeCheck(args.file);
+        if (t){
+          return processUpload(args.file);
+      }else{
+          return {
+              success: false,
+              message: "Type Error"
+          }
+      }
+      },
+      multipleUploadLocal : async (_, args) =>{
+          let obj =  (await Promise.all(args.files)).map(processUpload);
+          console.log(obj);
+          return obj;
+      },
+      // singleUploadS3 : async (_, args)=>{
+      //     return processUploadS3(args.file);
+      // },
+      // multipleUploadS3 : async (_, args)=>{
+      //     let obj = (await Promise.all(args.files)).map(processUploadS3);
+      //     return obj;
+      // }
       // ------------------------------------------------------------------------- 
       // createStatusAsset: async (parent, args, { userId }, info) => {
       //   const { statusAssetName } = args;

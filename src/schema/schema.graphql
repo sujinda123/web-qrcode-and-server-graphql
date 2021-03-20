@@ -1,11 +1,15 @@
+
 input SearchList {
-  assetCode: String
+  ASSET_CODE: String
 }
+
 # ---------------------------------------------------------------------------- Select
 type Query {
   # me: User!
   # login(userUsername: String!, userPwd: String!): AuthData
-  getUser(username: String): [User!]!
+  getUser(username: String): User
+  getSearch(input: SearchList, page: Int, limit: Int): [Asset!]!
+  uploadedFiles : [File]
   # users: [User]
   # allUsers: [User]
   # assets: [Asset]!
@@ -36,15 +40,20 @@ type Mutation {
     assetModel: String!
     assetSerialNumber: String!
   ): Asset!
+  
+  singleUploadLocal(file: Upload!) : File
+  multipleUploadLocal(files: [Upload]!) : [File]
+  # singleUploadS3(file : Upload!) : File
+  # multipleUploadS3(files : [Upload]!) : [File]
+}
 
-  # createProduct(name: String!, description: String!, price: Float!): Product!
-  # updateProduct(
-  #   id: ID!
-  #   name: String
-  #   description: String
-  #   price: Float
-  # ): Product!
-  # deleteProduct(id: ID!): Product!
+type File {
+  success: String!
+  message: String!
+  mimetype: String
+  encoding: String
+  filename: String
+  location: String
 }
 
 # type Subscription {
@@ -65,7 +74,6 @@ type User {
   # createdBy: String!
   USER_ASSETS: [Asset]
   # statusassets: [StatusAsset]
-  # search(input: SearchList, page: Int, limit: Int): [Asset!]!
   UPDATE_DATE: Date!
   CREATE_DATE: Date!
 }
@@ -127,6 +135,7 @@ type Asset {
   ASSET_CODE: String! # รหัสครุภัณฑ์
   ASSET_NAME: String! # ชื่อครุภัณฑ์
   ASSET_NUMBER: Int! # จำนวน
+  ASSET_PRICE: Float
   # assetUnitCost: String! # หน่วยนับ
   ASSET_BRAND: String! # ยี่ห้อ
   ASSET_MODEL: String! # รุ่น/โมเดล
@@ -134,6 +143,7 @@ type Asset {
   ASSET_IMAGES: [Asset_Images]
   ASSET_STATUS: [Status_Asset]
   ASSET_ROOM: [Room]
+  ASSET_ORIGINAL_ROOM: [Room]
   CREATED_BY: [User]
   UPDATE_BY: [User]
   CREATE_DATE: Date!
