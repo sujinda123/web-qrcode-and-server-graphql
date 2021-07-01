@@ -13,6 +13,7 @@ const typeDefs = fs
     .toString()
 
 const server = new ApolloServer({
+    uploads: false,
     typeDefs,
     resolvers,
     introspection: true,

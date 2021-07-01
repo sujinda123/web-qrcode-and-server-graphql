@@ -1,12 +1,14 @@
 // import Mutation from "./mutation"
 // import Query from "./query"
 import { GraphQLDateTime } from "graphql-iso-date"
+import { GraphQLUpload } from "graphql-upload";
 // const { PubSub } = require('apollo-server');
 // const pubsub = new PubSub();
 // const POST_ADDED = 'POST_ADDED'
 // const POST_ADD_DataUser = 'POST_ADD_DataUser'
-
+const path = require("path");
 import bcrypt from "bcryptjs";
+import console from "console";
 const mysql = require('mysql');
 const fs = require('fs');
 const util = require('util');
@@ -22,7 +24,7 @@ const {v4: uuid} = require('uuid');
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'sujinda',
+  password: '',
   database: 'db_myapp'
 });
 
@@ -51,7 +53,7 @@ let getUser = (username) => {
 
 let typeCheck = async (item)=>{
   let {mimetype} = await item;
-  console.log(item)
+  // console.log(item)
   if(!(mimetype === "image/png" || mimetype === "image/jpeg")){
       return false;
   }else{
@@ -60,22 +62,16 @@ let typeCheck = async (item)=>{
 }
 
 const processUpload = async (file)=>{
-  console.log(file)
   const {createReadStream, mimetype, encoding, filename} = await file;
-  console.log(mimetype)
-  console.log(encoding)
-  console.log(filename)
-  let path = "uploads/" + uuid() + filename;
-  let stream = fs.createReadStream();
-  return new Promise((resolve,reject)=>{
-      stream
-      .pipe(fs.createWriteStream(path))
+  let url = path.join(__dirname, "../../uploads", filename)
+  return await new Promise((resolve,reject)=>{
+    createReadStream()
+      .pipe(fs.createWriteStream(url))
       .on("finish", ()=>{
-
           resolve({
               success: true,
               message: "Successfully Uploaded",
-              mimetype, filename, encoding, location: path
+              mimetype, filename, encoding, location: url
           })
       })
       .on("error", (err)=>{
@@ -119,7 +115,7 @@ const resolvers = {
   //   //     subscribe: (parent, args, context, info) => pubsub.asyncIterator([POST_ADD_DataUser]),
   //   // },
   // },
-
+  Upload: GraphQLUpload,
   Query:{
     // user: async (root, { name }, { userId, userModel }) => await userModel.getUserById(userId),
     getUser: (obj, { id }, { auth_username }) => {
@@ -127,7 +123,8 @@ const resolvers = {
       if(auth_username == null){
         throw new Error("กรุณาเข้าสู่ระบบ")
       }
-      return getUser(auth_username).then(rows => rows);
+      const data = getUser(auth_username)
+      return data.then(rows => rows);
     },
     getSearch: async ( _, args ) => {
       const {input: { ASSET_CODE }, limit, page, } = args
@@ -237,7 +234,7 @@ const resolvers = {
                 throw new Error("Password must be at least 6 characters.")
               }
 
-              sql = `INSERT INTO users (USER_USERNAME, USER_FIRSTNAME, USER_LASTNAME, USER_PASSWORD) VALUES ('${USER_USERNAME}', '${USER_FIRSTNAME}', '${USER_LASTNAME}', '${password}')`;
+              sql = `INSERT INTO asset_users (USER_USERNAME, USER_FIRSTNAME, USER_LASTNAME, USER_PASSWORD) VALUES ('${USER_USERNAME}', '${USER_FIRSTNAME}', '${USER_LASTNAME}', '${password}')`;
               query(sql);
 
               return jwt.sign({userId: USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
@@ -283,16 +280,23 @@ const resolvers = {
 
           return { token }
       },
-      singleUploadLocal : async (_, args)=>{
+        singleUploadLocal : async (_, args)=>{
         let t = await typeCheck(args.file);
         if (t){
-          return processUpload(args.file);
-      }else{
-          return {
-              success: false,
-              message: "Type Error"
-          }
-      }
+          const data = processUpload(args.file)
+          await data.then(d => {
+            if(d.success){
+              var sql = `INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${d.filename}', '${args.assetID}')`;
+              query(sql)
+            }
+          })
+          return data;
+        }else{
+            return {
+                success: false,
+                message: "Type Error"
+            }
+        }
       },
       multipleUploadLocal : async (_, args) =>{
           let obj =  (await Promise.all(args.files)).map(processUpload);

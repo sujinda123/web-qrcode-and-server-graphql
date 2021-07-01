@@ -1,4 +1,4 @@
-
+scalar Upload
 input SearchList {
   ASSET_CODE: String
 }
@@ -18,9 +18,17 @@ type Query {
   
   # product(id: ID!): Product
   # products: [Product]!
+  
 }
 # the schema allows the following query:
-
+type File {
+  success: String!
+  message: String!
+  filename: String
+  mimetype: String
+  encoding: String
+  location: String
+}
 # ---------------------------------------------------------------------------- Create
 type Mutation {
   signup(
@@ -41,19 +49,10 @@ type Mutation {
     assetSerialNumber: String!
   ): Asset!
   
-  singleUploadLocal(file: Upload!) : File
+  singleUploadLocal(file: Upload!, assetID: String!) : File
   multipleUploadLocal(files: [Upload]!) : [File]
   # singleUploadS3(file : Upload!) : File
   # multipleUploadS3(files : [Upload]!) : [File]
-}
-
-type File {
-  success: String!
-  message: String!
-  mimetype: String
-  encoding: String
-  filename: String
-  location: String
 }
 
 # type Subscription {
@@ -62,6 +61,7 @@ type File {
 
 scalar Date
 
+# ผู้ใช้งาน
 type User {
   USER_ID: Int!
   USER_USERNAME: String!
@@ -149,7 +149,7 @@ type Asset {
   CREATE_DATE: Date!
   UPDATE_DATE: Date!
 }
-
+# รูปครุภัณฑ์
 type Asset_Images {
   IMAGE_ID: Int!
   IMAGE_NAME: String! # ชื่อรูปภาพ
