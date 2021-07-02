@@ -63,7 +63,8 @@ let typeCheck = async (item)=>{
 
 const processUpload = async (file)=>{
   const {createReadStream, mimetype, encoding, filename} = await file;
-  let url = path.join(__dirname, "../../uploads", filename)
+  let name = uuid() + '.jpg'
+  let url = path.join(__dirname, "../../uploads", name)
   return await new Promise((resolve,reject)=>{
     createReadStream()
       .pipe(fs.createWriteStream(url))
@@ -71,7 +72,7 @@ const processUpload = async (file)=>{
           resolve({
               success: true,
               message: "Successfully Uploaded",
-              mimetype, filename, encoding, location: url
+              mimetype, filename: name, encoding, location: url
           })
       })
       .on("error", (err)=>{
@@ -83,28 +84,6 @@ const processUpload = async (file)=>{
       })
   })
 }
-
-// let processUploadS3 = async (file)=>{
-//   const {createReadStream, mimetype, encoding, filename} = await file;
-//   let stream = createReadStream();
-//   const {Location} = await s3.upload({
-//       Body: stream,
-//       Key: `${uuid()}${filename}`,
-//       ContentType: mimetype
-//   }).promise();
-//   return new Promise((resolve,reject)=>{
-//       if (Location){
-//           resolve({
-//               success: true, message: "Uploaded", mimetype,filename,
-//               location: Location, encoding
-//           })
-//       }else {
-//           reject({
-//               success: false, message: "Failed"
-//           })
-//       }
-//   })
-// }
 
 const resolvers = {
   // Subscription: {
@@ -280,36 +259,19 @@ const resolvers = {
 
           return { token }
       },
-        singleUploadLocal : async (_, args)=>{
-        let t = await typeCheck(args.file);
-        if (t){
-          const data = processUpload(args.file)
-          await data.then(d => {
-            if(d.success){
-              var sql = `INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${d.filename}', '${args.assetID}')`;
-              query(sql)
-            }
-          })
-          return data;
-        }else{
-            return {
-                success: false,
-                message: "Type Error"
-            }
-        }
+      singleUploadLocal : async (_, { file, assetID })=>{
+        let obj =  (await processUpload(file));
+        query(`INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${obj.filename}', '${assetID}')`)
+        return obj
       },
-      multipleUploadLocal : async (_, args) =>{
-          let obj =  (await Promise.all(args.files)).map(processUpload);
-          console.log(obj);
-          return obj;
+      multipleUploadLocal : async (_, { files, assetID }) =>{
+        let obj =  (await Promise.all(files)).map(processUpload);
+        obj.map(data => data.then(d=>{
+          query(`INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${d.filename}', '${assetID}')`)
+        }))
+        return obj;
       },
-      // singleUploadS3 : async (_, args)=>{
-      //     return processUploadS3(args.file);
-      // },
-      // multipleUploadS3 : async (_, args)=>{
-      //     let obj = (await Promise.all(args.files)).map(processUploadS3);
-      //     return obj;
-      // }
+
       // ------------------------------------------------------------------------- 
       // createStatusAsset: async (parent, args, { userId }, info) => {
       //   const { statusAssetName } = args;
@@ -346,77 +308,6 @@ const resolvers = {
             // populate: { path: "assets" }
           })
       },
-    // ------------------------------------------------------------------------- เพิ่มสินค้าให้สมาชิก
-      // createProduct: async (parent, args, context, info) => {
-      //   const userId = "5ea71f8b796e2560d80facf6"
-      //   if (!args.name || !args.description || !args.price) {
-      //     throw new Error("Please provide all required fields.")
-      //   }
-      //   const product = await Product.create({ ...args, user: userId })
-      //   const user = await User.findById(userId)
-
-      //   pubsub.publish(POST_ADDED, {
-      //     newProductUser: product
-      //   });
-
-      //   if (!user.products) {
-      //     user.products = [product]
-      //   } else {
-      //     user.products.push(product)
-      //   }
-      //   await user.save()
-      //   return Product.findById(product.id).populate({
-      //     path: "user",
-      //     populate: { path: "products" }
-      //   })
-      // },
-    // ------------------------------------------------------------------------- Updateสินค้าให้สมาชิก
-      // updateProduct: async (parent, args, context, info) => {
-      //   const { id, name, description, price } = args
-      //   // TODO: Check if user logged in
-      //   // หา product ใน database
-      //   const product = await Product.findById(id)
-      //   // TODO: Check if user is the owner of the product
-      //   const userId = "5ea71f8b796e2560d80facf6"
-      //   if (userId !== product.user.toString()) {
-      //     throw new Error("You are not authorized.")
-      //   }
-      //   // Form ที่ใช้ในการ updated
-      //   const updateInfo = {
-      //     name: !!name ? name : product.name,
-      //     description: !!description ? description : product.description,
-      //     price: !!price ? price : product.price
-      //   }
-      //   // Update product ใน database
-      //   await Product.findByIdAndUpdate(id, updateInfo)
-      //   // หา Product ที่ update มาแสดง
-      //   const updatedProduct = await Product.findById(id).populate({ path: "user" })
-      //   return updatedProduct
-      // },
-      // ------------------------------------------------------------------------- ลบสินค้าให้สมาชิก
-      // deleteProduct: async (parent, args, context, info) => {
-      //   const { id } = args;
-      //   // Find product from given id
-      //   const product = await Product.findById(id);
-      //   // TODO: Check if user logged in
-      //   // TODO: user id from request --> Find user
-      //   const userId = "5ea71f8b796e2560d80facf6";
-      //   // Check if user logged in
-      //   if (!userId) throw new Error("Please log in.");
-      //   const user = await User.findById(userId)
-      //   // Check ownership of the product
-      //   if (product.user.toString() !== userId) {
-      //     throw new Error("Not authorized.")
-      //   }
-      //   // Delete product
-      //   const deletedProduct = await Product.findOneAndRemove(id);
-      //   // Update user's products
-      //   const updatedUserProducts = user.products.filter(
-      //     productId => productId.toString() !== deletedProduct.id.toString()
-      //   );
-      //   await User.findByIdAndUpdate(userId, { products: updatedUserProducts });
-      //   return deletedProduct;
-      // }
     },
   Date: GraphQLDateTime
 };

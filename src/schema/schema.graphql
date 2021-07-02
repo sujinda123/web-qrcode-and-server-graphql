@@ -50,7 +50,7 @@ type Mutation {
   ): Asset!
   
   singleUploadLocal(file: Upload!, assetID: String!) : File
-  multipleUploadLocal(files: [Upload]!) : [File]
+  multipleUploadLocal(files: [Upload]!, assetID: String!) : [File]
   # singleUploadS3(file : Upload!) : File
   # multipleUploadS3(files : [Upload]!) : [File]
 }

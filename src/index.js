@@ -68,7 +68,7 @@ const createServer = async () => {
 
       const app = express()
       app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-      app.use(graphqlUploadExpress({ maxFileSize: 1000000000, maxFiles: 10 }));
+      app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 10 })); // 10 MB
       server.applyMiddleware({ app });
       const httpServer = http.createServer(app);
       server.installSubscriptionHandlers(httpServer);
