@@ -49,8 +49,8 @@ type Mutation {
     assetSerialNumber: String!
   ): Asset!
   
-  singleUploadLocal(file: Upload!, assetID: String!) : File
-  multipleUploadLocal(files: [Upload]!, assetID: String!) : [File]
+  singleUploadLocal(file: Upload!, assetID: Int!) : File
+  multipleUploadLocal(files: [Upload]!, assetID: Int!) : [File]
   # singleUploadS3(file : Upload!) : File
   # multipleUploadS3(files : [Upload]!) : [File]
 }
@@ -70,19 +70,19 @@ type User {
   USER_LASTNAME: String!
   USER_PRIVILEGE: [Privilege]
   ASSET_PRIVILEGE: [Status_Asset]
-  # updateBy: String!
-  # createdBy: String!
   USER_ASSETS: [Asset]
-  # statusassets: [StatusAsset]
+  USER_CHECK_ASSET: [Asset]
+  USER_ASSET_NUM_CHECK: Int!
+  USER_ASSET_NUM_NOT_CHECK: Int!
+  USER_NOT_CHECK_ASSET: [Asset]
   UPDATE_DATE: Date!
   CREATE_DATE: Date!
 }
+
 # สิทธิ์การเข้าถึง
 type Privilege {
   PRIVILEGE_ID: ID!
   PRIVILEGE_NAME: String!
-  # UPDATE_BY: User!
-  # CREATE_BY: User!
   UPDATE_DATE: Date!
   CREATE_DATE: Date!
 }
@@ -91,9 +91,6 @@ type Privilege {
 type Status_Asset {
   STATUS_ID: Int!
   STATUS_NAME: String!
-  # asset: Asset!
-  # updateBy: User!
-  # createdBy: User!
   CREATE_DATE: Date!
   UPDATE_DATE: Date!
 }
@@ -122,9 +119,6 @@ type Location {
 type Room {
   ROOM_ID: Int!
   ROOM_NAME: String! # ชื่อห้อง
-  # roomLocation: Location! # ชื่อตึก
-  # updateBy: User!
-  # createdBy: User!
   CREATE_DATE: Date!
   UPDATE_DATE: Date!
 }
@@ -136,7 +130,6 @@ type Asset {
   ASSET_NAME: String! # ชื่อครุภัณฑ์
   ASSET_NUMBER: Int! # จำนวน
   ASSET_PRICE: Float
-  # assetUnitCost: String! # หน่วยนับ
   ASSET_BRAND: String! # ยี่ห้อ
   ASSET_MODEL: String! # รุ่น/โมเดล
   ASSET_SERIALNUMBER: String! # หมายเลขเครื่อง/S/N
@@ -144,15 +137,17 @@ type Asset {
   ASSET_STATUS: [Status_Asset]
   ASSET_ROOM: [Room]
   ASSET_ORIGINAL_ROOM: [Room]
+  ASSET_USER: [User]
   CREATED_BY: [User]
   UPDATE_BY: [User]
   CREATE_DATE: Date!
   UPDATE_DATE: Date!
 }
+
 # รูปครุภัณฑ์
 type Asset_Images {
   IMAGE_ID: Int!
-  IMAGE_NAME: String! # ชื่อรูปภาพ
+  IMAGE: String! # ชื่อรูปภาพ
   ASSET_ID: Int!
   # updateBy: User! 
   # createdBy: User!

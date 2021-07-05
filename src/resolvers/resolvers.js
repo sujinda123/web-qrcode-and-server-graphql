@@ -30,6 +30,31 @@ const connection = mysql.createConnection({
 
 const query = util.promisify(connection.query).bind(connection);
 
+function base64_encode(file) {
+  // read binary data
+  var bitmap = fs.readFileSync(file);
+  // convert binary data to base64 encoded string
+  return new Buffer.from(bitmap).toString('base64');
+}
+
+let queryDBImg = (sql) => {
+  return new Promise((resolve, reject) => {
+      query(sql, (err, results) => {
+          if (err) reject(err);
+          const dataImg = []
+          if(results[0] != undefined){
+            results.map(data => {
+              let url = path.join(__dirname, "../../uploads", data.IMAGE)
+              var base64str = base64_encode(url);
+              dataImg.push({ IMAGE: `${base64str}` })
+            })
+          }
+          // console.log(dataImg)
+          resolve(dataImg)
+        });
+  });
+};
+
 let queryDB = (sql) => {
   return new Promise((resolve, reject) => {
       query(sql, (err, results) => {
@@ -126,6 +151,22 @@ const resolvers = {
       let sql = `SELECT * FROM asset_status_and_privilege LEFT JOIN asset_status ON asset_status_and_privilege.STATUS_ID = asset_status.STATUS_ID WHERE PRIVILEGE_ID = '${obj.USER_PRIVILEGE}'`;
       return queryDB(sql).then(rows => rows);
     },
+    USER_CHECK_ASSET: (obj) => {
+      let sql = `SELECT * FROM asset INNER JOIN asset_period ON asset.CHECK_DATE >= asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      return queryDB(sql).then(rows => rows);
+    },
+    USER_NOT_CHECK_ASSET: (obj) => {
+      let sql = `SELECT * FROM asset INNER JOIN asset_period ON asset.CHECK_DATE < asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      return queryDB(sql).then(rows => rows);
+    },
+    USER_ASSET_NUM_CHECK: (obj) => {
+      let sql = `SELECT COUNT(*) as USER_ASSET_NUM_CHECK FROM asset INNER JOIN asset_period ON asset.CHECK_DATE >= asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      return queryDB(sql).then(rows => rows[0].USER_ASSET_NUM_CHECK);
+    },
+    USER_ASSET_NUM_NOT_CHECK: (obj) => {
+      let sql = `SELECT COUNT(*) as USER_ASSET_NUM_NOT_CHECK FROM asset INNER JOIN asset_period ON asset.CHECK_DATE < asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      return queryDB(sql).then(rows => rows[0].USER_ASSET_NUM_NOT_CHECK);
+    },
   //   assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
     
     // search: async  ( user, args, { dataloaders, assetModel } ) => {
@@ -158,9 +199,13 @@ const resolvers = {
 	// 	// },
   },
   Asset:{
+    ASSET_USER: (obj) => {
+      let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.ASSET_USER}'`;
+      return queryDB(sql).then(rows => rows);
+    },
     ASSET_IMAGES: (obj) => {
       let sql = `SELECT * FROM asset_image WHERE ASSET_ID = '${obj.ASSET_ID}'`;
-      return queryDB(sql).then(rows => rows);
+      return queryDBImg(sql).then(rows => rows);
     },
     ASSET_STATUS: (obj) => {
       let sql = `SELECT * FROM asset_status WHERE STATUS_ID = '${obj.ASSET_STATUS}'`;
@@ -261,13 +306,13 @@ const resolvers = {
       },
       singleUploadLocal : async (_, { file, assetID })=>{
         let obj =  (await processUpload(file));
-        query(`INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${obj.filename}', '${assetID}')`)
+        query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${obj.filename}', '${assetID}')`)
         return obj
       },
       multipleUploadLocal : async (_, { files, assetID }) =>{
         let obj =  (await Promise.all(files)).map(processUpload);
         obj.map(data => data.then(d=>{
-          query(`INSERT INTO asset_image (IMAGE_NAME, ASSET_ID) VALUES ('${d.filename}', '${assetID}')`)
+          query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${d.filename}', '${assetID}')`)
         }))
         return obj;
       },
