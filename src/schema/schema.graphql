@@ -51,6 +51,10 @@ type Mutation {
   
   singleUploadLocal(file: Upload!, assetID: Int!) : File
   multipleUploadLocal(files: [Upload]!, assetID: Int!) : [File]
+
+  updateStatusAsset(assetID: Int!, assetStatus: Int!) : return
+
+  deleteImageAsset(ImgID: Int!): return
   # singleUploadS3(file : Upload!) : File
   # multipleUploadS3(files : [Upload]!) : [File]
 }
@@ -134,6 +138,7 @@ type Asset {
   ASSET_MODEL: String! # รุ่น/โมเดล
   ASSET_SERIALNUMBER: String! # หมายเลขเครื่อง/S/N
   ASSET_IMAGES: [Asset_Images]
+  ASSET_COUNT_IMAGES: Int!
   ASSET_STATUS: [Status_Asset]
   ASSET_ROOM: [Room]
   ASSET_ORIGINAL_ROOM: [Room]
@@ -158,9 +163,12 @@ type Asset_Images {
 # ข้อมูลรับรองความถูกต้อง
 type AuthData {
   # userId: ID
+  status: Boolean
   token: String
+  refreshToken: String
+  message: String
 }
 
 type return {
-  text: String
+  status: Boolean
 }

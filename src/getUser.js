@@ -1,10 +1,11 @@
 import jwt from 'jsonwebtoken'
-const APP_SECRET = 'abcdefghijklmnopqrst'
+const config = require('./config')
 
 const getUser = token =>{
     const parsedToken = token.split(" ")[1]
     try{
-        const decodeToken = jwt.verify(parsedToken,APP_SECRET)
+        // console.log(parsedToken)
+        const decodeToken = jwt.verify(parsedToken, config.secret)
         return decodeToken.userId
     }catch(error){
         return null

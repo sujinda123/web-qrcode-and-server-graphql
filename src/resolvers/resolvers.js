@@ -12,12 +12,13 @@ import console from "console";
 const mysql = require('mysql');
 const fs = require('fs');
 const util = require('util');
+import moment from 'moment';
 // import User from "../models/User"
 // import StatusAsset from "../models/StatusAsset"
 // import Asset from "../models/Asset"
 
 const jwt = require('jsonwebtoken')
-const APP_SECRET = 'abcdefghijklmnopqrst'
+const config = require('../config')
 
 const {v4: uuid} = require('uuid');
 
@@ -46,7 +47,7 @@ let queryDBImg = (sql) => {
             results.map(data => {
               let url = path.join(__dirname, "../../uploads", data.IMAGE)
               var base64str = base64_encode(url);
-              dataImg.push({ IMAGE: `${base64str}` })
+              dataImg.push({ IMAGE_ID: data.IMAGE_ID, IMAGE: `${base64str}` })
             })
           }
           // console.log(dataImg)
@@ -125,14 +126,15 @@ const resolvers = {
     getUser: (obj, { id }, { auth_username }) => {
       // console.log(auth_username)
       if(auth_username == null){
-        throw new Error("กรุณาเข้าสู่ระบบ")
+        throw new Error("LoginFalse")
       }
       const data = getUser(auth_username)
       return data.then(rows => rows);
     },
     getSearch: async ( _, args ) => {
       const {input: { ASSET_CODE }, limit, page, } = args
-      let sql = `SELECT * FROM asset WHERE ASSET_CODE LIKE '%${ASSET_CODE}%'`;
+      let sql = `SELECT * FROM asset WHERE ASSET_CODE LIKE '%${ASSET_CODE}%' LIMIT ${limit}`;
+      // queryDB(sql).then(rows => console.log(rows))
       return queryDB(sql).then(rows => rows);
     },
   },
@@ -152,11 +154,11 @@ const resolvers = {
       return queryDB(sql).then(rows => rows);
     },
     USER_CHECK_ASSET: (obj) => {
-      let sql = `SELECT * FROM asset INNER JOIN asset_period ON asset.CHECK_DATE >= asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      let sql = `SELECT *, asset.UPDATE_DATE FROM asset INNER JOIN asset_period ON asset.CHECK_DATE >= asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
       return queryDB(sql).then(rows => rows);
     },
     USER_NOT_CHECK_ASSET: (obj) => {
-      let sql = `SELECT * FROM asset INNER JOIN asset_period ON asset.CHECK_DATE < asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
+      let sql = `SELECT *, asset.UPDATE_DATE FROM asset INNER JOIN asset_period ON asset.CHECK_DATE < asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
       return queryDB(sql).then(rows => rows);
     },
     USER_ASSET_NUM_CHECK: (obj) => {
@@ -167,37 +169,8 @@ const resolvers = {
       let sql = `SELECT COUNT(*) as USER_ASSET_NUM_NOT_CHECK FROM asset INNER JOIN asset_period ON asset.CHECK_DATE < asset_period.PERIOD_START WHERE CREATED_BY = '${obj.USER_ID}'`;
       return queryDB(sql).then(rows => rows[0].USER_ASSET_NUM_NOT_CHECK);
     },
-  //   assets: async (user, args, { dataloaders }) => await dataloaders.assets.load(user.id),
-    
-    // search: async  ( user, args, { dataloaders, assetModel } ) => {
-    //     const {input: { assetCode }, limit, page, } = args
-    //     return await assetModel.asset
-    //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
-    //     .limit(limit)
-    //     .skip((page - 1) * limit)
-    //     .populate({path: "createdBy updateBy",})},
-  //   // assets: (user) => new DataLoader((keys) => 
-  //   //   genPromise(
-  //   //     keys.map((user) => user),
-  //   //     `getAssetById: ${user.id}`)
-  //   //   ).loadMany(user.assets),
-  //   // search:  ( _, {input: { assetCode }, limit, page, }, {assetModel} ) => 
-  //   //   await assetModel
-  //   //     .find({ assetCode: { $regex: assetCode, $options: 'i' }})
-  //   //     .limit(limit)
-  //   //     .skip((page - 1) * limit)
-  //   //     .populate({path: "createdBy updateBy",}),
-
-  //   // assets: (user) => {
-	// 	// 	const authorLoader = new DataLoader((keys) => {
-	// 	// 		const result = keys.map((user) => {
-	// 	// 			return user
-	// 	// 		})
-	// 	// 		return genPromise(result,`getAssetById: ${user.id}`)
-  //   //   })
-	// 	// 	return authorLoader.loadMany(user.assets)
-	// 	// },
   },
+
   Asset:{
     ASSET_USER: (obj) => {
       let sql = `SELECT * FROM asset_users WHERE USER_ID = '${obj.ASSET_USER}'`;
@@ -206,6 +179,10 @@ const resolvers = {
     ASSET_IMAGES: (obj) => {
       let sql = `SELECT * FROM asset_image WHERE ASSET_ID = '${obj.ASSET_ID}'`;
       return queryDBImg(sql).then(rows => rows);
+    },
+    ASSET_COUNT_IMAGES: (obj) => {
+      let sql = `SELECT COUNT(*) as ASSET_COUNT_IMAGES FROM asset_image WHERE ASSET_ID = '${obj.ASSET_ID}'`;
+      return queryDB(sql).then(rows => rows[0].ASSET_COUNT_IMAGES);
     },
     ASSET_STATUS: (obj) => {
       let sql = `SELECT * FROM asset_status WHERE STATUS_ID = '${obj.ASSET_STATUS}'`;
@@ -234,126 +211,139 @@ const resolvers = {
     //         populate: { path: "createdBy updateBy"}, 
     //     })
   },
+
   Status_Asset:{
     // updateBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.updateBy),
     // createdBy: async (asset, args, { dataloaders }) => await dataloaders.users.load(asset.createdBy),
   },
+
   Mutation:{
-        // ------------------------------------------------------------------------- สมัครสมาชิก
-        signup: async (parent, args, info) => {
-          const { USER_USERNAME, USER_PASSWORD, USER_FIRSTNAME, USER_LASTNAME } = args;
+    // ------------------------------------------------------------------------- สมัครสมาชิก
+    signup: async (parent, args, info) => {
+      const { USER_USERNAME, USER_PASSWORD, USER_FIRSTNAME, USER_LASTNAME } = args;
 
-          var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${USER_USERNAME}'`;
-          const password = await bcrypt.hash(USER_PASSWORD, 10);
-          
-          let token = (async () => {
-            try {
-              const rows = await query(sql);
+      var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${USER_USERNAME}'`;
+      const password = await bcrypt.hash(USER_PASSWORD, 10);
+      
+      let token = (async () => {
+        try {
+          const rows = await query(sql);
 
-              if(rows[0]!=null){
-                throw new Error("Username มีในระบบแล้ว")
-              }
-
-              if (USER_PASSWORD.trim().length < 6) {
-                throw new Error("Password must be at least 6 characters.")
-              }
-
-              sql = `INSERT INTO asset_users (USER_USERNAME, USER_FIRSTNAME, USER_LASTNAME, USER_PASSWORD) VALUES ('${USER_USERNAME}', '${USER_FIRSTNAME}', '${USER_LASTNAME}', '${password}')`;
-              query(sql);
-
-              return jwt.sign({userId: USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
-            } finally {
-              // connection.end();
-            }
-          })()
-
-
-          
-          return { token }
-        },
-      // ------------------------------------------------------------------------- Login
-      login:async(parent, args, { userModel }, info) => {
-          const { Username, Password } = args;
-
-          if (Username == '') {
-              throw new Error("กรุณากรอก Username")
-          }
-          if (Password == '') {
-              throw new Error("กรุณากรอก รหัสผ่าน")
+          if(rows[0]!=null){
+            throw new Error("Username มีในระบบแล้ว")
           }
 
-          var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${Username}'`;
+          if (USER_PASSWORD.trim().length < 6) {
+            throw new Error("Password must be at least 6 characters.")
+          }
 
-          let token = (async () => {
-            try {
+          sql = `INSERT INTO asset_users (USER_USERNAME, USER_FIRSTNAME, USER_LASTNAME, USER_PASSWORD) VALUES ('${USER_USERNAME}', '${USER_FIRSTNAME}', '${USER_LASTNAME}', '${password}')`;
+          query(sql);
 
-              const rows = await query(sql);
-              if(rows[0]==null){
-                throw new Error("ไม่พบ Username ในระบบ")
-              }
-              const checkPassword = await bcrypt.compare(Password, rows[0].USER_PASSWORD)
-              if(!checkPassword){
-                throw new Error('รหัสผ่าน ไม่ถูกต้อง')
-              }
-              return jwt.sign({userId: rows[0].USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
-
-            } finally {
-              // connection.end();
-            }
-          })()
-
-          return { token }
-      },
-      singleUploadLocal : async (_, { file, assetID })=>{
-        let obj =  (await processUpload(file));
-        query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${obj.filename}', '${assetID}')`)
-        return obj
-      },
-      multipleUploadLocal : async (_, { files, assetID }) =>{
-        let obj =  (await Promise.all(files)).map(processUpload);
-        obj.map(data => data.then(d=>{
-          query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${d.filename}', '${assetID}')`)
-        }))
-        return obj;
-      },
-
-      // ------------------------------------------------------------------------- 
-      // createStatusAsset: async (parent, args, { userId }, info) => {
-      //   const { statusAssetName } = args;
-      //   if (statusAssetName == '') {
-      //     throw new Error("กรุณากรอก Status name!")
-      //   }
-      //   const statusasset = await StatusAsset.create({ ...args, updateBy: userId, createdBy: userId })
-      //   const user = await userModel.users.findById(userId)
-      //   if (!user.statusassets) {
-      //     user.statusassets = [statusasset]
-      //   } else {
-      //     user.statusassets.push(statusasset)
-      //   }
-      //   await user.save()
-      //   return StatusAsset.findById(statusasset.id).populate({
-      //       path: "user",
-      //       populate: { path: "statusassets" }
-      //     })
-      // },
-      // ------------------------------------------------------------------------- 
-      createAsset: async (parent, args, { userId, assetModel, userModel }, info) => {
-        if(!userId)
-          throw new Error("กรุณา เข้าสู่ระบบ")
-        const assets = await assetModel.asset.create({ ...args, updateBy: userId, createdBy: userId })
-        const user = await userModel.user.findById(userId)
-        if (!user.assets) {
-          user.assets = [assets]
-        } else {
-          user.assets.push(assets)
+          return jwt.sign({userId: USER_USERNAME}, APP_SECRET, { expiresIn: '3d' },);
+        } finally {
+          // connection.end();
         }
-        await user.save()
-        return assetModel.asset.findById(assets.id).populate({
-            path: "createdBy updateBy",
-            // populate: { path: "assets" }
-          })
-      },
+      })()
+
+
+      
+      return { token }
     },
+    // ------------------------------------------------------------------------- Login
+    login:async(parent, args, { userModel }, info) => {
+        const { Username, Password } = args;
+
+        if (Username == '') {
+            throw new Error("กรุณากรอก Username")
+        }
+        if (Password == '') {
+            throw new Error("กรุณากรอก รหัสผ่าน")
+        }
+
+        var sql = `SELECT * FROM asset_users WHERE USER_USERNAME = '${Username}'`;
+
+        const rows = await query(sql);
+        if(rows[0]==null){
+          throw new Error("ไม่พบ Username ในระบบ")
+        }
+        const checkPassword = await bcrypt.compare(Password, rows[0].USER_PASSWORD)
+        if(!checkPassword){
+          throw new Error('รหัสผ่าน ไม่ถูกต้อง')
+        }
+
+        const token = jwt.sign({userId: rows[0].USER_USERNAME}, config.secret, { expiresIn: config.tokenLife },);
+        const refreshToken = jwt.sign({userId: rows[0].USER_USERNAME}, config.refreshTokenSecret, { expiresIn: config.refreshTokenLife})
+
+        return {
+          "status": true,
+          "token": token,
+          "refreshToken": refreshToken,
+          "message": "เข้าสู่ระบบสำเร็จ"
+        }
+    },
+    singleUploadLocal : async (_, { file, assetID })=>{
+      let obj =  (await processUpload(file));
+      query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${obj.filename}', '${assetID}')`)
+      return obj
+    },
+    multipleUploadLocal : async (_, { files, assetID }) =>{
+      let obj =  (await Promise.all(files)).map(processUpload);
+      obj.map(data => data.then(d=>{
+        query(`INSERT INTO asset_image (IMAGE, ASSET_ID) VALUES ('${d.filename}', '${assetID}')`)
+      }))
+      return obj;
+    },
+    updateStatusAsset : async (_, { assetID, assetStatus }) => {
+      query(`UPDATE asset SET ASSET_STATUS = '${assetStatus}',CHECK_DATE = '${moment(new Date()).format('YYYY-MM-DD')}', UPDATE_DATE = '${moment(new Date()).format('YYYY-MM-DD HH:mm:ss')}' WHERE ASSET_ID = '${assetID}'`)
+      return {"status": true};
+    },
+    deleteImageAsset: async (_, { ImgID }) => {
+      query(`SELECT IMAGE FROM asset_image WHERE IMAGE_ID = '${ImgID}'`).then(data => {
+        let url = path.join(__dirname, "../../uploads", data[0].IMAGE)
+        fs.unlinkSync(url)
+      })
+      query(`DELETE FROM asset_image WHERE IMAGE_ID = '${ImgID}'`)
+      return {"status": true};
+    },
+
+    // ------------------------------------------------------------------------- 
+    // createStatusAsset: async (parent, args, { userId }, info) => {
+    //   const { statusAssetName } = args;
+    //   if (statusAssetName == '') {
+    //     throw new Error("กรุณากรอก Status name!")
+    //   }
+    //   const statusasset = await StatusAsset.create({ ...args, updateBy: userId, createdBy: userId })
+    //   const user = await userModel.users.findById(userId)
+    //   if (!user.statusassets) {
+    //     user.statusassets = [statusasset]
+    //   } else {
+    //     user.statusassets.push(statusasset)
+    //   }
+    //   await user.save()
+    //   return StatusAsset.findById(statusasset.id).populate({
+    //       path: "user",
+    //       populate: { path: "statusassets" }
+    //     })
+    // },
+    // ------------------------------------------------------------------------- 
+    createAsset: async (parent, args, { userId, assetModel, userModel }, info) => {
+      if(!userId)
+        throw new Error("กรุณา เข้าสู่ระบบ")
+      const assets = await assetModel.asset.create({ ...args, updateBy: userId, createdBy: userId })
+      const user = await userModel.user.findById(userId)
+      if (!user.assets) {
+        user.assets = [assets]
+      } else {
+        user.assets.push(assets)
+      }
+      await user.save()
+      return assetModel.asset.findById(assets.id).populate({
+          path: "createdBy updateBy",
+          // populate: { path: "assets" }
+        })
+    },
+  },
   Date: GraphQLDateTime
 };
 
